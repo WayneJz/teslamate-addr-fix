@@ -1,6 +1,10 @@
 package main
 
-import "flag"
+import (
+	"flag"
+	"log"
+	"os"
+)
 
 var (
 	timeout  int
@@ -10,7 +14,11 @@ var (
 	user     string
 	db       string
 	password string
+
+	logger *log.Logger
 )
+
+const logName = "teslamate-addr-fix.log"
 
 func init() {
 	flag.StringVar(&proxy, "proxy", "", "http proxy (default use system proxy)")
@@ -25,4 +33,22 @@ func init() {
 
 func main() {
 	flag.Parse()
+
+	if err := initPSql(host, port, user, password, db); err != nil {
+		panic(err)
+	}
+	if err := initProxyCli(proxy, timeout); err != nil {
+		panic(err)
+	}
+
+	log.SetFlags(log.LstdFlags)
+	f, err := os.Create(logName)
+	if err == nil {
+		log.SetOutput(f)
+	} else {
+		log.SetOutput(os.Stdout)
+	}
+
+	saveBrokenAddr()
+	fixAddrBroken()
 }

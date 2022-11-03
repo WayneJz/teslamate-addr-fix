@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	osmReverseURL = "https://nominatim.openstreetmap.org/reverse?lat=%s&lon=%s&format=json"
+	osmReverseURL = "https://nominatim.openstreetmap.org/reverse?lat=%.6f&lon=%.6f&format=json"
 )
 
 var cli *http.Client
@@ -47,7 +47,7 @@ type OsmRevAddress struct {
 	Boundingbox []string               `json:"boundingbox"`
 }
 
-func getAddressByProxy(latitude, longitude string) (*OsmRevAddress, error) {
+func getAddressByProxy(latitude, longitude float64) (*OsmRevAddress, error) {
 	reqURL := fmt.Sprintf(osmReverseURL, latitude, longitude)
 	rsp, err := cli.Get(reqURL)
 	if err != nil {
