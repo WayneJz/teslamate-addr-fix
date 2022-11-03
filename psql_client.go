@@ -86,15 +86,15 @@ func saveBrokenAddr() error {
 		}
 
 		for _, p := range positions {
-			addr := &Address{}
-			tx.Table("addresses").Where("latitude = ?", p.Latitude).Where("longitude = ?", p.Longitude).First(addr)
-
-			if addr.ID > 0 {
-				continue
-			}
 			osmAddr, err := getAddressByProxy(p.Latitude, p.Longitude)
 			if err != nil {
 				log.Printf("get address from osm failed, lat=%v, lon=%v, err=%#v", p.Latitude, p.Longitude, err)
+				continue
+			}
+
+			var exist int64
+			tx.Table("addresses").Where("osm_id = ?", osmAddr.OsmID).Where("osm_type = ?", osmAddr.OsmType).Count(&exist)
+			if exist > 0 {
 				continue
 			}
 
