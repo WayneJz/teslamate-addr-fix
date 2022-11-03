@@ -175,7 +175,7 @@ func fixAddrBroken() error {
 			startAddr, endAddr := &Address{}, &Address{}
 			tx.Table("addresses").Where("osm_id = ?", osmStartAddr.OsmID).Where("osm_type = ?", osmStartAddr.OsmType).First(startAddr)
 			if startAddr.ID > 0 {
-				err := tx.Table("drives").Where("id = ?", d.ID).Update("start_address_id", startAddr.ID)
+				err := tx.Table("drives").Where("id = ?", d.ID).Update("start_address_id", startAddr.ID).Error
 				if err == nil {
 					log.Printf("fix address success, drives id=%v, fix start addr=%v", d.ID, startAddr.DisplayName)
 				}
@@ -183,7 +183,7 @@ func fixAddrBroken() error {
 
 			tx.Table("addresses").Where("osm_id = ?", osmEndAddr.OsmID).Where("osm_type = ?", osmEndAddr.OsmType).First(endAddr)
 			if endAddr.ID > 0 {
-				tx.Table("drives").Where("id = ?", d.ID).Update("end_address_id", endAddr.ID)
+				err := tx.Table("drives").Where("id = ?", d.ID).Update("end_address_id", endAddr.ID).Error
 				if err == nil {
 					log.Printf("fix address success, drives id=%v, fix end addr=%v", d.ID, endAddr.DisplayName)
 				}
