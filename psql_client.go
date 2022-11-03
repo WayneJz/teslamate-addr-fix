@@ -27,7 +27,7 @@ func initPSql(host, port, user, password, db string) error {
 type Drive struct {
 	ID              int64 `gorm:"column:id"`
 	StartPositionID int64 `gorm:"column:start_position_id"`
-	EndPositionID   int64 `gorm:"column:end_position_id "`
+	EndPositionID   int64 `gorm:"column:end_position_id"`
 	StartAddressID  int64 `gorm:"column:start_address_id"`
 	EndAddressID    int64 `gorm:"column:end_address_id"`
 }
@@ -54,8 +54,8 @@ type Address struct {
 	StateDistrict sql.NullString `gorm:"column:state_district"`
 	Country       sql.NullString `gorm:"column:country"`
 	Raw           []byte         `gorm:"column:raw"`
-	InsertedAt    int64          `gorm:"column:inserted_at"`
-	UpdatedAt     int64          `gorm:"column:updated_at"`
+	InsertedAt    time.Time      `gorm:"column:inserted_at"`
+	UpdatedAt     time.Time      `gorm:"column:updated_at"`
 	OsmID         int64          `gorm:"column:osm_id"`
 	OsmType       string         `gorm:"column:osm_type"`
 }
@@ -71,9 +71,18 @@ func saveBrokenAddr() error {
 		positions := []*Position{}
 		for _, d := range drives {
 			startPos, endPos := &Position{}, &Position{}
-			tx.Table("positions").Where("id = ?", d.StartPositionID).First(startPos)
-			tx.Table("positions").Where("id = ?", d.EndPositionID).First(endPos)
-			positions = append(positions, startPos, endPos)
+
+			if err := tx.Table("positions").Where("id = ?", d.StartPositionID).First(startPos).Error; err != nil {
+				log.Printf("start position not found, id=%v, drive=%+v", d.StartPositionID, d)
+			} else {
+				positions = append(positions, startPos)
+			}
+
+			if err := tx.Table("positions").Where("id = ?", d.EndPositionID).First(endPos).Error; err != nil {
+				log.Printf("end position not found, id=%v, drive=%+v", d.EndPositionID, d)
+			} else {
+				positions = append(positions, endPos)
+			}
 		}
 
 		for _, p := range positions {
@@ -110,8 +119,8 @@ func saveBrokenAddr() error {
 				StateDistrict: getOrNull(osmAddr.Address, "state_district"),
 				Country:       getOrNull(osmAddr.Address, "country"),
 				Raw:           raw,
-				InsertedAt:    time.Now().Unix(),
-				UpdatedAt:     time.Now().Unix(),
+				InsertedAt:    time.Now(),
+				UpdatedAt:     time.Now(),
 				OsmID:         int64(osmAddr.OsmID),
 				OsmType:       osmAddr.OsmType,
 			}
