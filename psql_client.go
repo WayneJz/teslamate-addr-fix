@@ -32,6 +32,12 @@ type Drive struct {
 	EndAddressID    int64 `gorm:"column:end_address_id"`
 }
 
+type ChargingProcess struct {
+	ID         int64 `gorm:"column:id"`
+	PositionID int64 `gorm:"column:position_id"`
+	AddressID  int64 `gorm:"column:address_id"`
+}
+
 type Position struct {
 	ID        int64   `gorm:"column:id"`
 	Latitude  float64 `gorm:"column:latitude"`
@@ -62,6 +68,8 @@ type Address struct {
 
 func saveBrokenAddr() error {
 	return psql.Transaction(func(tx *gorm.DB) error {
+
+		// find drive graph broken addresses
 		var drives []*Drive
 		err := tx.Table("drives").Where("start_address_id IS NULL").Or("end_address_id IS NULL").Find(&drives).Error
 		if err != nil {
@@ -85,6 +93,23 @@ func saveBrokenAddr() error {
 			}
 		}
 
+		// find charge graph broken addresses
+		var charges []*ChargingProcess
+		err = tx.Table("charging_processes").Where("address_id IS NULL").Find(&charges).Error
+		if err != nil {
+			return err
+		}
+
+		for _, c := range charges {
+			pos := &Position{}
+			if err := tx.Table("positions").Where("id = ?", c.PositionID).First(pos).Error; err != nil {
+				log.Printf("charge position not found, id=%v, charge=%+v", c.PositionID, c)
+			} else {
+				positions = append(positions, pos)
+			}
+		}
+
+		// fix addresses by positions
 		for _, p := range positions {
 			osmAddr, err := getAddressByProxy(p.Latitude, p.Longitude)
 			if err != nil {
@@ -151,6 +176,8 @@ func getOrNull(m map[string]interface{}, key string) sql.NullString {
 
 func fixAddrBroken() error {
 	return psql.Transaction(func(tx *gorm.DB) error {
+
+		// fix drives
 		var drives []*Drive
 		err := tx.Table("drives").Where("start_address_id IS NULL").Or("end_address_id IS NULL").Find(&drives).Error
 		if err != nil {
@@ -186,6 +213,33 @@ func fixAddrBroken() error {
 				err := tx.Table("drives").Where("id = ?", d.ID).Update("end_address_id", endAddr.ID).Error
 				if err == nil {
 					log.Printf("fix address success, drives id=%v, fix end addr=%v", d.ID, endAddr.DisplayName)
+				}
+			}
+		}
+
+		// fix charges
+		var charges []*ChargingProcess
+		err = tx.Table("charging_processes").Where("address_id IS NULL").Find(&charges).Error
+		if err != nil {
+			return err
+		}
+
+		for _, c := range charges {
+			pos := &Position{}
+			tx.Table("positions").Where("id = ?", c.PositionID).First(pos)
+
+			osmAddr, err := getAddressByProxy(pos.Latitude, pos.Longitude)
+			if err != nil {
+				log.Printf("get address from osm failed, lat=%v, lon=%v, err=%#v", pos.Latitude, pos.Longitude, err)
+				continue
+			}
+
+			addr := &Address{}
+			tx.Table("addresses").Where("osm_id = ?", osmAddr.OsmID).Where("osm_type = ?", osmAddr.OsmType).First(addr)
+			if addr.ID > 0 {
+				err := tx.Table("charging_processes").Where("id = ?", c.ID).Update("address_id", addr.ID).Error
+				if err == nil {
+					log.Printf("fix address success, charge id=%v, fix addr=%v", c.ID, addr.DisplayName)
 				}
 			}
 		}
