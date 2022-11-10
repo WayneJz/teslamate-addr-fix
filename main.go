@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 )
 
 var (
@@ -15,6 +16,7 @@ var (
 	user     string
 	db       string
 	password string
+	interval int
 
 	logger *log.Logger
 )
@@ -30,6 +32,7 @@ func init() {
 	flag.StringVar(&user, "user", "teslamate", "teslamate psql user")
 	flag.StringVar(&db, "db", "teslamate", "teslamate psql database")
 	flag.StringVar(&password, "password", "", "teslamate psql password")
+	flag.IntVar(&interval, "interval", 0, "interval (minutes) for running in daemon mode")
 }
 
 func main() {
@@ -55,6 +58,13 @@ func main() {
 		log.SetOutput(os.Stdout)
 	}
 
-	saveBrokenAddr()
-	fixAddrBroken()
+	if interval > 0 {
+		for range time.Tick(time.Minute * time.Duration(interval)) {
+			saveBrokenAddr()
+			fixAddrBroken()
+		}
+	} else {
+		saveBrokenAddr()
+		fixAddrBroken()
+	}
 }
