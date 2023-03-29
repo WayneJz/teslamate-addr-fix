@@ -59,6 +59,8 @@ After fixed:
 			teslamate psql database (default "teslamate")
 	-host string
 			teslamate psql host (default "127.0.0.1")
+	-interval int
+        	interval (minutes) for running in daemon mode
 	-password string
 			teslamate psql password
 	-port string

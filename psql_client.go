@@ -113,7 +113,7 @@ func saveBrokenAddr() error {
 		for _, p := range positions {
 			osmAddr, err := getAddressByProxy(p.Latitude, p.Longitude)
 			if err != nil {
-				log.Printf("get address from osm failed, lat=%v, lon=%v, err=%#v", p.Latitude, p.Longitude, err)
+				log.Printf("get address from osm failed, lat=%v, lon=%v, err=%v", p.Latitude, p.Longitude, err.Error())
 				continue
 			}
 
@@ -190,12 +190,12 @@ func fixAddrBroken() error {
 
 			osmStartAddr, err := getAddressByProxy(startPos.Latitude, startPos.Longitude)
 			if err != nil {
-				log.Printf("get address from osm failed, lat=%v, lon=%v, err=%#v", startPos.Latitude, startPos.Longitude, err)
+				log.Printf("get address from osm failed, lat=%v, lon=%v, err=%v", startPos.Latitude, startPos.Longitude, err.Error())
 				continue
 			}
 			osmEndAddr, err := getAddressByProxy(endPos.Latitude, endPos.Longitude)
 			if err != nil {
-				log.Printf("get address from osm failed, lat=%v, lon=%v, err=%#v", endPos.Latitude, endPos.Longitude, err)
+				log.Printf("get address from osm failed, lat=%v, lon=%v, err=%v", endPos.Latitude, endPos.Longitude, err.Error())
 				continue
 			}
 
@@ -230,7 +230,7 @@ func fixAddrBroken() error {
 
 			osmAddr, err := getAddressByProxy(pos.Latitude, pos.Longitude)
 			if err != nil {
-				log.Printf("get address from osm failed, lat=%v, lon=%v, err=%#v", pos.Latitude, pos.Longitude, err)
+				log.Printf("get address from osm failed, lat=%v, lon=%v, err=%v", pos.Latitude, pos.Longitude, err.Error())
 				continue
 			}
 

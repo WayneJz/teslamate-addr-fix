@@ -51,7 +51,7 @@
 	export https_proxy=http://127.0.0.1:7890
 	```
 
-- 执行帮助指令 `./teslamate-addr-fix -h`. 您至少需要指定 teslamate 的postgres 数据库密码, 否则程序无法连接到 teslamate 的数据库. 其他参数如果和默认值不同的话也需要指定.
+- 执行帮助指令 `./teslamate-addr-fix -h`. 您至少需要指定 teslamate 的 postgres 数据库密码, 否则程序无法连接到 teslamate 的数据库. 其他参数如果和默认值不同的话也需要指定.
 
 	```
 	Usage of ./teslamate-addr-fix:
@@ -59,6 +59,8 @@
 			teslamate psql database (default "teslamate")
 	-host string
 			teslamate psql host (default "127.0.0.1")
+	-interval int
+        	interval (minutes) for running in daemon mode
 	-password string
 			teslamate psql password
 	-port string
