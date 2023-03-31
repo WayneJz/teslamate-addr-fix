@@ -77,14 +77,14 @@ func main() {
 		log.SetOutput(os.Stdout)
 	}
 
+	saveBrokenAddr()
+	fixAddrBroken()
+
 	if interval > 0 {
 		for range time.Tick(time.Minute * time.Duration(interval)) {
 			saveBrokenAddr()
 			fixAddrBroken()
 		}
-	} else {
-		saveBrokenAddr()
-		fixAddrBroken()
 	}
 }
 
