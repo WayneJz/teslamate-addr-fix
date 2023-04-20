@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"crypto/tls"
 	"time"
 )
 
@@ -20,6 +21,7 @@ func initProxyCli(proxy string, timeoutSec int) error {
 	timeout := time.Duration(timeoutSec) * time.Second
 	proxyfunc := http.ProxyFromEnvironment
 	if proxy != "" {
+		fmt.Printf("using specific proxy: %v\n", proxy)
 		u, err := url.Parse(proxy)
 		if err != nil {
 			return err
@@ -29,6 +31,7 @@ func initProxyCli(proxy string, timeoutSec int) error {
 	cli = &http.Client{
 		Transport: &http.Transport{
 			Proxy: proxyfunc,
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
 		Timeout: timeout,
 	}
