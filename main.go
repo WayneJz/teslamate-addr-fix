@@ -70,9 +70,13 @@ func main() {
 	}
 
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	f, err := os.Create(logName)
-	if err == nil {
-		log.SetOutput(f)
+	if os.Getenv("TESLAMATE_ADDR_FIX_ENV") != "docker" {
+		f, err := os.Create(logName)
+		if err == nil {
+			log.SetOutput(f)
+		} else {
+			log.SetOutput(os.Stdout)
+		}
 	} else {
 		log.SetOutput(os.Stdout)
 	}

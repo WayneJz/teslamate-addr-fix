@@ -51,6 +51,24 @@ After fixed:
 
 - Then execute `docker-compose up -d` to recreate docker. This tool will run with teslamate in the same subnetwork. After serveral minutes, check your teslamate grafana drive graph if anything correct.
 
+If you can't use the prepared docker image (maybe on different arch etc.), you can use the following compose config to build the image yourself:
+
+```yaml
+# Insert below 'database' section
+
+teslamate-addr-fix:
+build: ./teslamate-addr-fix
+restart: always
+environment:
+	- PROXY=http://192.168.0.100:7890    # Set your HTTP proxy
+	- DATABASE_USER=teslamate
+	- DATABASE_PASS=123456               # Copy from 'teslamate' section
+	- DATABASE_NAME=teslamate
+	- DATABASE_HOST=database
+depends_on:
+	- database
+```
+
 ### 2. Binary Installation 
 
 - Download this tool from [releases page](https://github.com/WayneJz/teslamate-addr-fix/releases). Ensure you download the right binary for your OS arch/version.
