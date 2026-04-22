@@ -80,16 +80,20 @@ func saveBrokenAddr() error {
 		for _, d := range drives {
 			startPos, endPos := &Position{}, &Position{}
 
-			if err := tx.Table("positions").Where("id = ?", d.StartPositionID).First(startPos).Error; err != nil {
-				log.Printf("start position not found, id=%v, drive=%+v", d.StartPositionID, d)
-			} else {
-				positions = append(positions, startPos)
+			if d.StartPositionID > 0 {
+				if err := tx.Table("positions").Where("id = ?", d.StartPositionID).First(startPos).Error; err != nil {
+					log.Printf("start position not found, id=%v, drive=%+v", d.StartPositionID, d)
+				} else {
+					positions = append(positions, startPos)
+				}
 			}
 
-			if err := tx.Table("positions").Where("id = ?", d.EndPositionID).First(endPos).Error; err != nil {
-				log.Printf("end position not found, id=%v, drive=%+v", d.EndPositionID, d)
-			} else {
-				positions = append(positions, endPos)
+			if d.EndPositionID > 0 {
+				if err := tx.Table("positions").Where("id = ?", d.EndPositionID).First(endPos).Error; err != nil {
+					log.Printf("end position not found, id=%v, drive=%+v", d.EndPositionID, d)
+				} else {
+					positions = append(positions, endPos)
+				}
 			}
 		}
 
@@ -101,6 +105,9 @@ func saveBrokenAddr() error {
 		}
 
 		for _, c := range charges {
+			if c.PositionID == 0 {
+				continue
+			}
 			pos := &Position{}
 			if err := tx.Table("positions").Where("id = ?", c.PositionID).First(pos).Error; err != nil {
 				log.Printf("charge position not found, id=%v, charge=%+v", c.PositionID, c)
@@ -111,6 +118,9 @@ func saveBrokenAddr() error {
 
 		// fix addresses by positions
 		for _, p := range positions {
+			if p.Latitude == 0 || p.Longitude == 0 {
+				continue
+			}
 			osmAddr, err := getAddressByProxy(p.Latitude, p.Longitude)
 			if err != nil {
 				log.Printf("get address from osm failed, lat=%v, lon=%v, err=%v", p.Latitude, p.Longitude, err.Error())
@@ -185,34 +195,41 @@ func fixAddrBroken() error {
 		}
 		for _, d := range drives {
 			startPos, endPos := &Position{}, &Position{}
-			tx.Table("positions").Where("id = ?", d.StartPositionID).First(startPos)
-			tx.Table("positions").Where("id = ?", d.EndPositionID).First(endPos)
 
-			osmStartAddr, err := getAddressByProxy(startPos.Latitude, startPos.Longitude)
-			if err != nil {
-				log.Printf("get address from osm failed, lat=%v, lon=%v, err=%v", startPos.Latitude, startPos.Longitude, err.Error())
-				continue
+			if d.StartPositionID > 0 {
+				tx.Table("positions").Where("id = ?", d.StartPositionID).First(startPos)
 			}
-			osmEndAddr, err := getAddressByProxy(endPos.Latitude, endPos.Longitude)
-			if err != nil {
-				log.Printf("get address from osm failed, lat=%v, lon=%v, err=%v", endPos.Latitude, endPos.Longitude, err.Error())
-				continue
+			if d.EndPositionID > 0 {
+				tx.Table("positions").Where("id = ?", d.EndPositionID).First(endPos)
 			}
-
-			startAddr, endAddr := &Address{}, &Address{}
-			tx.Table("addresses").Where("osm_id = ?", osmStartAddr.OsmID).Where("osm_type = ?", osmStartAddr.OsmType).First(startAddr)
-			if startAddr.ID > 0 {
-				err := tx.Table("drives").Where("id = ?", d.ID).Update("start_address_id", startAddr.ID).Error
-				if err == nil {
-					log.Printf("fix address success, drives id=%v, fix start addr=%v", d.ID, startAddr.DisplayName)
+			if startPos.Latitude > 0 && startPos.Longitude > 0 {
+				osmStartAddr, err := getAddressByProxy(startPos.Latitude, startPos.Longitude)
+				if err != nil {
+					log.Printf("get address from osm failed, lat=%v, lon=%v, err=%v", startPos.Latitude, startPos.Longitude, err.Error())
+					continue
+				}
+				startAddr := &Address{}
+				tx.Table("addresses").Where("osm_id = ?", osmStartAddr.OsmID).Where("osm_type = ?", osmStartAddr.OsmType).First(startAddr)
+				if startAddr.ID > 0 {
+					err := tx.Table("drives").Where("id = ?", d.ID).Update("start_address_id", startAddr.ID).Error
+					if err == nil {
+						log.Printf("fix address success, drives id=%v, fix start addr=%v", d.ID, startAddr.DisplayName)
+					}
 				}
 			}
-
-			tx.Table("addresses").Where("osm_id = ?", osmEndAddr.OsmID).Where("osm_type = ?", osmEndAddr.OsmType).First(endAddr)
-			if endAddr.ID > 0 {
-				err := tx.Table("drives").Where("id = ?", d.ID).Update("end_address_id", endAddr.ID).Error
-				if err == nil {
-					log.Printf("fix address success, drives id=%v, fix end addr=%v", d.ID, endAddr.DisplayName)
+			if endPos.Latitude > 0 && endPos.Longitude > 0 {
+				osmEndAddr, err := getAddressByProxy(endPos.Latitude, endPos.Longitude)
+				if err != nil {
+					log.Printf("get address from osm failed, lat=%v, lon=%v, err=%v", endPos.Latitude, endPos.Longitude, err.Error())
+					continue
+				}
+				endAddr := &Address{}
+				tx.Table("addresses").Where("osm_id = ?", osmEndAddr.OsmID).Where("osm_type = ?", osmEndAddr.OsmType).First(endAddr)
+				if endAddr.ID > 0 {
+					err := tx.Table("drives").Where("id = ?", d.ID).Update("end_address_id", endAddr.ID).Error
+					if err == nil {
+						log.Printf("fix address success, drives id=%v, fix end addr=%v", d.ID, endAddr.DisplayName)
+					}
 				}
 			}
 		}
@@ -226,8 +243,13 @@ func fixAddrBroken() error {
 
 		for _, c := range charges {
 			pos := &Position{}
-			tx.Table("positions").Where("id = ?", c.PositionID).First(pos)
 
+			if c.PositionID > 0 {
+				tx.Table("positions").Where("id = ?", c.PositionID).First(pos)
+			}
+			if pos.Latitude == 0 || pos.Longitude == 0 {
+				continue
+			}
 			osmAddr, err := getAddressByProxy(pos.Latitude, pos.Longitude)
 			if err != nil {
 				log.Printf("get address from osm failed, lat=%v, lon=%v, err=%v", pos.Latitude, pos.Longitude, err.Error())

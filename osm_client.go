@@ -47,7 +47,15 @@ type OsmRevAddress struct {
 	Boundingbox []string               `json:"boundingbox"`
 }
 
+var lastQuery time.Time = time.Now()
+
 func getAddressByProxy(latitude, longitude float64) (*OsmRevAddress, error) {
+
+	if time.Now().Sub(lastQuery) < time.Second { // since osm banned frequent use HTTP 429
+		time.Sleep(time.Second)
+		lastQuery = time.Now()
+	}
+
 	reqURL := fmt.Sprintf(osmReverseURL, latitude, longitude)
 
 	req, err := http.NewRequest(http.MethodGet, reqURL, nil)
