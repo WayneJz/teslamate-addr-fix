@@ -12,6 +12,7 @@ import (
 var (
 	timeout  int
 	proxy    string
+	ua       string
 	host     string
 	port     string
 	user     string
@@ -22,9 +23,12 @@ var (
 
 const logName = "teslamate-addr-fix.log"
 
+const UA = "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36"
+
 func init() {
 	flag.StringVar(&proxy, "proxy", "", "http proxy (default use system proxy)")
 	flag.IntVar(&timeout, "timeout", 5, "timeout of openstreetmap request")
+	flag.StringVar(&ua, "useragent", UA, "you can define user agent to bypass osm block")
 
 	flag.StringVar(&host, "host", "127.0.0.1", "teslamate psql host")
 	flag.StringVar(&port, "port", "5432", "teslamate psql port")
@@ -39,6 +43,7 @@ func loadEnvInDocker() {
 		return
 	}
 	getEnvStr("PROXY", &proxy)
+	getEnvStr("OSM_USER_AGENT", &ua)
 	getEnvInt("OSM_TIMEOUT", &timeout)
 	getEnvStr("DATABASE_HOST", &host)
 	getEnvStr("DATABASE_PORT", &port)

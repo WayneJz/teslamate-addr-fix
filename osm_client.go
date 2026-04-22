@@ -49,7 +49,15 @@ type OsmRevAddress struct {
 
 func getAddressByProxy(latitude, longitude float64) (*OsmRevAddress, error) {
 	reqURL := fmt.Sprintf(osmReverseURL, latitude, longitude)
-	rsp, err := cli.Get(reqURL)
+
+	req, err := http.NewRequest(http.MethodGet, reqURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", ua)
+	req.Header.Set("Accept", "*/*")
+
+	rsp, err := cli.Do(req)
 	if err != nil {
 		return nil, err
 	}
