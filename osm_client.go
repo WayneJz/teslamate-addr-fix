@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -28,7 +29,8 @@ func initProxyCli(proxy string, timeoutSec int) error {
 	}
 	cli = &http.Client{
 		Transport: &http.Transport{
-			Proxy: proxyfunc,
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			Proxy:           proxyfunc,
 		},
 		Timeout: timeout,
 	}
