@@ -51,6 +51,23 @@
 
 -  然后执行 `docker-compose up -d` 重建 docker. 本工具会在同一个子网下和 teslamate 一起运行. 几分钟后, 你可以查看 teslamate grafana 的 drive graph 检查是否修复. 
 
+如果因为某种原因（比如架构不同）而无法使用预制镜像，你可以使用以下 Docker compose 配置直接构建并运行 `teslamate-addr-fix` 。
+
+```yaml
+# Insert below 'database' section
+
+teslamate-addr-fix:
+build: ./teslamate-addr-fix
+restart: always
+environment:
+	- PROXY=http://192.168.0.100:7890    # Set your HTTP proxy
+	- DATABASE_USER=teslamate
+	- DATABASE_PASS=123456               # Copy from 'teslamate' section
+	- DATABASE_NAME=teslamate
+	- DATABASE_HOST=database
+depends_on:
+	- database
+```
 
 ### 2. 二进制程序安装
 
