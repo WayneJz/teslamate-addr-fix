@@ -51,8 +51,8 @@ var lastQuery time.Time = time.Now()
 
 func getAddressByProxy(latitude, longitude float64) (*OsmRevAddress, error) {
 
-	if time.Now().Sub(lastQuery) < time.Second { // since osm banned frequent use HTTP 429
-		time.Sleep(time.Second)
+	if time.Now().Sub(lastQuery) < 10 * time.Second { // since osm banned frequent use HTTP 429
+		time.Sleep(10 * time.Second)
 		lastQuery = time.Now()
 	}
 
